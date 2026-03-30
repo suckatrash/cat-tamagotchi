@@ -1,0 +1,557 @@
+@font-face {
+  font-family: 'PressStart';
+  src: local('Press Start 2P');
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  image-rendering: pixelated;
+}
+
+body {
+  font-family: 'Press Start 2P', monospace;
+  background: #0f0f23;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow: hidden;
+  user-select: none;
+  color: #e0e0e0;
+}
+
+/* ── CRT Scanlines ── */
+#scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.12) 0px,
+    rgba(0, 0, 0, 0.12) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+}
+
+#app {
+  width: 480px;
+  max-width: 100vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+#title {
+  font-size: 11px;
+  color: #ffd866;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 0 #8a6000;
+  padding: 6px 0;
+}
+
+/* ── Happiness Bar ── */
+#happiness-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 400px;
+  max-width: 90vw;
+}
+
+#happiness-label {
+  color: #ff4444;
+  font-size: 10px;
+  min-width: 30px;
+  text-shadow: 1px 1px 0 #800000;
+}
+
+#happiness-bar {
+  flex: 1;
+  height: 20px;
+  background: #1a1a1a;
+  border: 4px solid #606060;
+  border-color: #404040 #a0a0a0 #a0a0a0 #404040;
+  position: relative;
+}
+
+#happiness-fill {
+  height: 100%;
+  width: 100%;
+  background: #44cc44;
+  transition: width 0.3s steps(20);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.25);
+}
+
+#happiness-fill.low {
+  background: #cc2222;
+}
+
+#happiness-fill.medium {
+  background: #ccaa22;
+}
+
+#happiness-value {
+  color: #44cc44;
+  font-size: 10px;
+  min-width: 32px;
+  text-align: right;
+  text-shadow: 0 0 6px #44cc44;
+}
+
+#happiness-value.low { color: #cc2222; text-shadow: 0 0 6px #cc2222; }
+#happiness-value.medium { color: #ccaa22; text-shadow: 0 0 6px #ccaa22; }
+
+/* ── Stage ── */
+#stage {
+  width: 460px;
+  max-width: 95vw;
+  height: 380px;
+  background: #306898;
+  position: relative;
+  overflow: hidden;
+  border: 6px solid #606060;
+  border-color: #a0a0a0 #404040 #404040 #a0a0a0;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6), inset 0 0 40px rgba(0, 0, 0, 0.15);
+  cursor: default;
+}
+
+#stage.night {
+  background: #0a0a2a;
+}
+
+#sky {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 55%;
+  overflow: hidden;
+}
+
+#ground {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  background: #308030;
+  border-top: 4px solid #206020;
+}
+
+#stage.night #ground {
+  background: #1a3a1a;
+  border-top-color: #102810;
+}
+
+/* Pixel clouds drawn by JS on sky - but let's add CSS pixel clouds */
+.pixel-cloud {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #e8e8e8;
+  animation: cloud-drift linear infinite;
+}
+
+@keyframes cloud-drift {
+  from { transform: translateX(-80px); }
+  to { transform: translateX(500px); }
+}
+
+/* ── Pixel Cat ── */
+#cat-wrap {
+  position: absolute;
+  bottom: 65px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: pointer;
+  z-index: 10;
+  image-rendering: pixelated;
+}
+
+#cat-canvas {
+  display: block;
+  width: 84px;
+  height: 102px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+#cat-wrap:hover {
+  filter: brightness(1.1);
+}
+
+#cat-wrap.playing {
+  animation: cat-bounce 0.3s steps(4) 3;
+}
+
+#cat-wrap.petting {
+  animation: cat-wiggle 0.12s steps(2) 6;
+}
+
+@keyframes cat-bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-12px); }
+}
+
+@keyframes cat-wiggle {
+  0%, 100% { transform: translateX(-50%) translateX(0); }
+  50% { transform: translateX(-50%) translateX(3px); }
+}
+
+/* Heart burst */
+#heart-burst {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 20;
+}
+
+.heart-particle {
+  position: absolute;
+  font-size: 10px;
+  font-family: 'Press Start 2P', monospace;
+  color: #ff4466;
+  animation: heart-rise 0.8s steps(8) forwards;
+  opacity: 0;
+  text-shadow: 1px 1px 0 #aa0022;
+}
+
+@keyframes heart-rise {
+  0% { opacity: 1; transform: translateY(0); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-50px); }
+}
+
+/* Emote bubble */
+#cat-emote {
+  position: absolute;
+  top: -24px;
+  right: -28px;
+  font-size: 20px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 20;
+  filter: contrast(1.5);
+}
+
+#cat-emote.show {
+  opacity: 1;
+  animation: emote-pop 0.3s steps(3);
+}
+
+@keyframes emote-pop {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+
+/* ── Grave ── */
+#grave {
+  position: absolute;
+  bottom: 45px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  animation: grave-rise 1s steps(8);
+}
+
+#grave.hidden { display: none; }
+
+@keyframes grave-rise {
+  0% { transform: translateX(-50%) translateY(80px); opacity: 0; }
+  100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+.gravestone {
+  width: 120px;
+  height: 130px;
+  background: #707070;
+  border: 4px solid #505050;
+  border-color: #909090 #404040 #404040 #909090;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.gravestone::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 24px;
+  background: #707070;
+  border: 4px solid #505050;
+  border-color: #909090 #404040 #404040 #909090;
+  border-bottom: none;
+  border-radius: 40px 40px 0 0;
+}
+
+.gravestone-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #d0d0d0;
+  padding-top: 8px;
+}
+
+.rip {
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-shadow: 1px 1px 0 #333;
+}
+
+.grave-cat-name {
+  font-size: 9px;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #aaddaa;
+  text-shadow: 0 0 4px #aaddaa;
+}
+
+.grave-subtitle {
+  font-size: 7px;
+  opacity: 0.6;
+}
+
+.grave-dirt {
+  width: 150px;
+  height: 16px;
+  background: #5a3a1a;
+  border: 3px solid #3a2a10;
+  border-color: #7a5a3a #3a2a10 #3a2a10 #7a5a3a;
+  margin-top: -2px;
+  margin-left: -15px;
+}
+
+/* ── Death Overlay ── */
+#death-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  animation: fade-in 1.5s steps(6);
+}
+
+#death-overlay.hidden { display: none; }
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+#death-dialog {
+  text-align: center;
+  padding: 24px;
+}
+
+.death-message {
+  color: #8888bb;
+  font-size: 9px;
+  margin-bottom: 18px;
+  line-height: 2;
+}
+
+.death-prompt {
+  color: #ffd866;
+  font-size: 10px;
+  margin-bottom: 14px;
+  text-shadow: 1px 1px 0 #8a6000;
+}
+
+#cat-name-input {
+  width: 180px;
+  padding: 8px 10px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  border: 4px solid #606060;
+  border-color: #404040 #a0a0a0 #a0a0a0 #404040;
+  background: #1a1a2e;
+  color: #44cc44;
+  text-align: center;
+  outline: none;
+  text-shadow: 0 0 4px #44cc44;
+}
+
+#cat-name-input:focus {
+  border-color: #44cc44 #228822 #228822 #44cc44;
+}
+
+#cat-name-input::placeholder {
+  color: #336633;
+}
+
+#cat-name-submit {
+  display: block;
+  margin: 14px auto 0;
+  padding: 10px 18px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  background: #2a2a4e;
+  color: #ffd866;
+  border: 4px solid #606060;
+  border-color: #a0a0a0 #404040 #404040 #a0a0a0;
+  cursor: pointer;
+  text-shadow: 1px 1px 0 #8a6000;
+  transition: none;
+}
+
+#cat-name-submit:hover {
+  background: #3a3a5e;
+  color: #ffe888;
+}
+
+#cat-name-submit:active {
+  border-color: #404040 #a0a0a0 #a0a0a0 #404040;
+}
+
+/* ── Toy Tray ── */
+#toy-tray {
+  width: 400px;
+  max-width: 90vw;
+  background: #1a1a2e;
+  padding: 10px 12px;
+  border: 4px solid #606060;
+  border-color: #a0a0a0 #404040 #404040 #a0a0a0;
+}
+
+.toy-label {
+  color: #5577aa;
+  font-size: 7px;
+  text-align: center;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+#toys {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: #2a2a4e;
+  cursor: grab;
+  border: 3px solid #505070;
+  border-color: #707090 #303050 #303050 #707090;
+  transition: none;
+}
+
+.toy:hover {
+  background: #3a3a5e;
+  border-color: #8888aa #404060 #404060 #8888aa;
+}
+
+.toy:active {
+  cursor: grabbing;
+  border-color: #404060 #8888aa #8888aa #404060;
+}
+
+.toy.dragging {
+  opacity: 0.3;
+}
+
+.toy-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.toy-name {
+  font-size: 7px;
+  color: #7788aa;
+}
+
+/* Drag ghost on stage */
+.drag-ghost {
+  position: absolute;
+  font-size: 32px;
+  pointer-events: none;
+  z-index: 30;
+  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.5));
+  animation: ghost-bob 0.4s steps(2) infinite;
+}
+
+@keyframes ghost-bob {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) translateY(-4px); }
+}
+
+/* Drop zone highlight */
+#cat-wrap.drop-target #cat-canvas {
+  filter: brightness(1.4) saturate(1.3);
+}
+
+/* ── Stars ── */
+.star {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #fff;
+  animation: twinkle 1.5s steps(2) infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+/* ── Zzz animation ── */
+.zzz {
+  position: absolute;
+  top: -16px;
+  right: -20px;
+  font-size: 8px;
+  font-family: 'Press Start 2P', monospace;
+  color: #6688aa;
+  animation: zzz-float 1.5s steps(6) infinite;
+  pointer-events: none;
+  z-index: 20;
+  text-shadow: 0 0 4px #6688aa;
+}
+
+@keyframes zzz-float {
+  0% { opacity: 0; transform: translateY(0); }
+  50% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-24px); }
+}
+
+/* Cat death animation */
+#cat-wrap.dying {
+  animation: cat-die 1.8s steps(12) forwards;
+}
+
+@keyframes cat-die {
+  0% { transform: translateX(-50%) translateY(0); opacity: 1; }
+  30% { transform: translateX(-50%) translateY(-70px); opacity: 1; }
+  50% { transform: translateX(-50%) translateY(-70px) rotate(180deg); opacity: 1; }
+  100% { transform: translateX(-50%) translateY(70px) rotate(360deg); opacity: 0; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 500px) {
+  #app { width: 100vw; }
+  #stage { width: 100vw; }
+  #happiness-bar-container, #toy-tray { width: 95vw; }
+  #title { font-size: 9px; }
+}

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kitty Tamagotchi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="scanlines"></div>
+  <div id="app">
+    <div id="title">~ KITTY TAMAGOTCHI ~</div>
+
+    <!-- Happiness Bar -->
+    <div id="happiness-bar-container">
+      <div id="happiness-label">HP</div>
+      <div id="happiness-bar">
+        <div id="happiness-fill"></div>
+      </div>
+      <div id="happiness-value">100</div>
+    </div>
+
+    <!-- Main Stage -->
+    <div id="stage">
+      <div id="sky"></div>
+      <div id="ground"></div>
+
+      <!-- Pixel Cat (canvas) -->
+      <div id="cat-wrap" title="Click to pet!">
+        <canvas id="cat-canvas"></canvas>
+        <div id="heart-burst"></div>
+        <div id="cat-emote"></div>
+      </div>
+
+      <!-- Grave (hidden by default) -->
+      <div id="grave" class="hidden">
+        <div class="gravestone">
+          <div class="gravestone-text">
+            <span class="rip">R.I.P.</span>
+            <span id="grave-name" class="grave-cat-name"></span>
+            <span class="grave-subtitle">A good kitty</span>
+          </div>
+        </div>
+        <div class="grave-dirt"></div>
+      </div>
+
+      <!-- Name input overlay -->
+      <div id="death-overlay" class="hidden">
+        <div id="death-dialog">
+          <p class="death-message">Your kitty went to<br>the great yarn ball<br>in the sky...</p>
+          <p class="death-prompt">Name your cat:</p>
+          <input type="text" id="cat-name-input" placeholder="..." maxlength="12" autofocus>
+          <button id="cat-name-submit">&gt; REST IN PEACE &lt;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toy Tray -->
+    <div id="toy-tray">
+      <div class="toy-label">&lt; DRAG TOY TO KITTY &gt;</div>
+      <div id="toys">
+        <div class="toy" data-toy="yarn" draggable="true">
+          <div class="toy-icon">&#129526;</div>
+          <div class="toy-name">YARN</div>
+        </div>
+        <div class="toy" data-toy="fish" draggable="true">
+          <div class="toy-icon">&#128031;</div>
+          <div class="toy-name">FISH</div>
+        </div>
+        <div class="toy" data-toy="mouse" draggable="true">
+          <div class="toy-icon">&#128001;</div>
+          <div class="toy-name">MOUSE</div>
+        </div>
+        <div class="toy" data-toy="feather" draggable="true">
+          <div class="toy-icon">&#129718;</div>
+          <div class="toy-name">FTHR</div>
+        </div>
+        <div class="toy" data-toy="laser" draggable="true">
+          <div class="toy-icon">&#128308;</div>
+          <div class="toy-name">LASER</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

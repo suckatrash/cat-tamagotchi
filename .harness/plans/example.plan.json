@@ -1,12 +1,10 @@
 {
-  "_comment": "EXAMPLE PLAN — rename this file and edit for your feature. Delete this _comment field.",
-
+  "_comment": "EXAMPLE PLAN \u2014 rename this file and edit for your feature. Delete this _comment field.",
   "slug": "add-feeding-mechanic",
   "title": "Add feeding mechanic to the cat",
   "type": "feature",
   "context": "The cat can be petted and given toys but can't be fed. Add a hunger stat and food items.",
   "status": "planned",
-
   "tasks": [
     {
       "id": "1",
@@ -36,7 +34,9 @@
         "app.js",
         "style.css"
       ],
-      "depends_on": ["1"]
+      "depends_on": [
+        "1"
+      ]
     },
     {
       "id": "3",
@@ -52,7 +52,9 @@
         "style.css",
         "app.js"
       ],
-      "depends_on": ["1"]
+      "depends_on": [
+        "1"
+      ]
     }
   ]
 }

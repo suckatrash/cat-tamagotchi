@@ -1,0 +1,205 @@
+name: Harness Runner
+
+on:
+  push:
+    paths:
+      - '.harness/plans/*.json'
+
+concurrency:
+  group: harness-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  run-plans:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed plans
+        id: detect
+        run: |
+          BEFORE="${{ github.event.before }}"
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            # First push to a new branch — list all plan files present
+            FILES=$(git ls-files '.harness/plans/*.json')
+          else
+            FILES=$(git diff --name-only --diff-filter=ACM "$BEFORE" "${{ github.sha }}" -- '.harness/plans/*.json')
+          fi
+          if [ -z "$FILES" ]; then
+            echo "No plan files changed."
+            echo "plans=" >> "$GITHUB_OUTPUT"
+          else
+            echo "Changed plans:"
+            echo "$FILES"
+            # Newline-delimited list stored as a single output
+            EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+            echo "plans<<$EOF" >> "$GITHUB_OUTPUT"
+            echo "$FILES" >> "$GITHUB_OUTPUT"
+            echo "$EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Filter already-processed plans
+        id: filter
+        if: steps.detect.outputs.plans != ''
+        run: |
+          FILTERED=""
+          while IFS= read -r plan_file; do
+            [ -z "$plan_file" ] && continue
+            STATUS=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('status',''))" "$plan_file" 2>/dev/null || echo "")
+            if [ "$STATUS" = "planned" ]; then
+              echo "Will process: $plan_file (status=$STATUS)"
+              FILTERED="${FILTERED}${plan_file}"$'\n'
+            else
+              echo "Skipping: $plan_file (status=$STATUS, not 'planned')"
+            fi
+          done <<< "${{ steps.detect.outputs.plans }}"
+          FILTERED=$(echo "$FILTERED" | sed '/^$/d')
+          if [ -z "$FILTERED" ]; then
+            echo "No plans with status 'planned'."
+            echo "plans=" >> "$GITHUB_OUTPUT"
+          else
+            EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+            echo "plans<<$EOF" >> "$GITHUB_OUTPUT"
+            echo "$FILTERED" >> "$GITHUB_OUTPUT"
+            echo "$EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.filter.outputs.plans != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python
+        if: steps.filter.outputs.plans != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Claude CLI
+        if: steps.filter.outputs.plans != ''
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Configure git identity
+        if: steps.filter.outputs.plans != ''
+        run: |
+          git config user.name "harness-bot"
+          git config user.email "harness-bot@users.noreply.github.com"
+
+      - name: Ensure labels exist
+        if: steps.filter.outputs.plans != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "harness-complete" --color "0E8A16" --description "Harness run completed successfully" || true
+          gh label create "harness-partial" --color "D93F0B" --description "Harness run had failures" || true
+
+      - name: Run plans
+        if: steps.filter.outputs.plans != ''
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SOURCE_BRANCH="${GITHUB_REF_NAME}"
+          ORIGINAL_SHA="${{ github.sha }}"
+          SHORT_SHA="${ORIGINAL_SHA:0:7}"
+          OVERALL_EXIT=0
+
+          while IFS= read -r plan_file; do
+            [ -z "$plan_file" ] && continue
+            echo "============================================"
+            echo "Processing: $plan_file"
+            echo "============================================"
+
+            # Extract slug from plan JSON
+            SLUG=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['slug'])" "$plan_file")
+            echo "Slug: $SLUG"
+
+            # Create implementation branch
+            IMPL_BRANCH="harness/impl/${SOURCE_BRANCH}/${SLUG}-${SHORT_SHA}"
+            echo "Branch: $IMPL_BRANCH"
+            git checkout -b "$IMPL_BRANCH"
+
+            # Run the harness runner with timeout (90 min)
+            RUNNER_EXIT=0
+            timeout 5400 python3 .harness/runner.py --plan "$plan_file" --loop || RUNNER_EXIT=$?
+            echo "Runner exit code: $RUNNER_EXIT"
+
+            # Stage any uncommitted artifacts
+            git add -A .harness/eval_feedback/ .harness/progress.md "$plan_file" || true
+            # Also stage any source changes the runner may have made
+            git add -A . || true
+
+            if ! git diff --cached --quiet; then
+              git commit -m "$(cat <<COMMITMSG
+          harness: implement ${SLUG}
+
+          Automated implementation by harness runner.
+          Plan: ${plan_file}
+          Source branch: ${SOURCE_BRANCH}
+          COMMITMSG
+          )"
+            fi
+
+            # Push implementation branch
+            git push origin "$IMPL_BRANCH" --force-with-lease
+
+            # Build PR body with task status summary
+            TASK_SUMMARY=$(python3 -c "
+          import json, sys
+          plan = json.load(open(sys.argv[1]))
+          lines = ['## Task Status\n']
+          for t in plan.get('tasks', []):
+              status = t.get('status', 'unknown')
+              icon = {'complete': ':white_check_mark:', 'in_progress': ':hourglass:', 'pending': ':white_circle:'}.get(status, ':question:')
+              lines.append(f'- {icon} **Task {t[\"id\"]}**: {t[\"title\"]} — {status}')
+          lines.append('')
+          lines.append(f'**Plan status**: {plan.get(\"status\", \"unknown\")}')
+          lines.append(f'**Runner exit code**: {sys.argv[2]}')
+          print('\n'.join(lines))
+          " "$plan_file" "$RUNNER_EXIT")
+
+            if [ "$RUNNER_EXIT" -eq 0 ]; then
+              PR_LABEL="harness-complete"
+              DRAFT_FLAG=""
+            else
+              PR_LABEL="harness-partial"
+              DRAFT_FLAG="--draft"
+              OVERALL_EXIT=1
+            fi
+
+            PR_BODY="$(cat <<EOF
+          ## Summary
+
+          Automated implementation of plan \`${SLUG}\` from \`${plan_file}\`.
+
+          ${TASK_SUMMARY}
+
+          ---
+          *Generated by harness-runner workflow*
+          EOF
+          )"
+
+            gh pr create \
+              --base "$SOURCE_BRANCH" \
+              --head "$IMPL_BRANCH" \
+              --title "harness: implement ${SLUG}" \
+              --body "$PR_BODY" \
+              --label "$PR_LABEL" \
+              $DRAFT_FLAG || echo "Warning: PR creation failed (may already exist)"
+
+            # Return to original SHA for the next plan
+            git checkout "$ORIGINAL_SHA" --detach
+
+          done <<< "${{ steps.filter.outputs.plans }}"
+
+          exit $OVERALL_EXIT

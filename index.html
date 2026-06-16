@@ -23,37 +23,58 @@
       <div id="happiness-value">100</div>
     </div>
 
-    <!-- Main Stage -->
-    <div id="stage">
-      <div id="sky"></div>
-      <div id="ground"></div>
+    <!-- Enlightenment Bar (hidden until first eclipse) -->
+    <div id="enlightenment-bar-container" class="hidden">
+      <div id="enlightenment-label">EN</div>
+      <div id="enlightenment-bar">
+        <div id="enlightenment-fill"></div>
+      </div>
+      <div id="enlightenment-value">0</div>
+    </div>
 
-      <!-- Pixel Cat (canvas) -->
-      <div id="cat-wrap" title="Click to pet!">
-        <canvas id="cat-canvas"></canvas>
-        <div id="heart-burst"></div>
-        <div id="cat-emote"></div>
+    <!-- Stage Row: weather panel + main stage -->
+    <div id="stage-row">
+      <div id="weather-panel">
+        <div class="weather-label">WEATHER</div>
+        <button class="weather-btn" data-weather="rain">🌧️ RAIN</button>
+        <button class="weather-btn" data-weather="snow">❄️ SNOW</button>
+        <button class="weather-btn" data-weather="volcano">🌋 VOLC</button>
+        <button class="weather-btn" data-weather="eclipse">🌑 ECLP</button>
+        <button class="weather-btn" data-weather="tornado">🌪️ TORN</button>
       </div>
 
-      <!-- Grave (hidden by default) -->
-      <div id="grave" class="hidden">
-        <div class="gravestone">
-          <div class="gravestone-text">
-            <span class="rip">R.I.P.</span>
-            <span id="grave-name" class="grave-cat-name"></span>
-            <span class="grave-subtitle">A good kitty</span>
-          </div>
+      <!-- Main Stage -->
+      <div id="stage">
+        <div id="sky"></div>
+        <div id="ground"></div>
+
+        <!-- Pixel Cat (canvas) -->
+        <div id="cat-wrap" title="Click to pet!">
+          <canvas id="cat-canvas"></canvas>
+          <div id="heart-burst"></div>
+          <div id="cat-emote"></div>
         </div>
-        <div class="grave-dirt"></div>
-      </div>
 
-      <!-- Name input overlay -->
-      <div id="death-overlay" class="hidden">
-        <div id="death-dialog">
-          <p class="death-message">Your kitty went to<br>the great yarn ball<br>in the sky...</p>
-          <p class="death-prompt">Name your cat:</p>
-          <input type="text" id="cat-name-input" placeholder="..." maxlength="12" autofocus>
-          <button id="cat-name-submit">&gt; REST IN PEACE &lt;</button>
+        <!-- Grave (hidden by default) -->
+        <div id="grave" class="hidden">
+          <div class="gravestone">
+            <div class="gravestone-text">
+              <span class="rip">R.I.P.</span>
+              <span id="grave-name" class="grave-cat-name"></span>
+              <span class="grave-subtitle">A good kitty</span>
+            </div>
+          </div>
+          <div class="grave-dirt"></div>
+        </div>
+
+        <!-- Name input overlay -->
+        <div id="death-overlay" class="hidden">
+          <div id="death-dialog">
+            <p class="death-message">Your kitty went to<br>the great yarn ball<br>in the sky...</p>
+            <p class="death-prompt">Name your cat:</p>
+            <input type="text" id="cat-name-input" placeholder="..." maxlength="12" autofocus>
+            <button id="cat-name-submit">&gt; REST IN PEACE &lt;</button>
+          </div>
         </div>
       </div>
     </div>

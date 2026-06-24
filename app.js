@@ -126,7 +126,14 @@
     enlightenment: 0,
     weatherActive: false,
     hasHalo: false,
+    babies: [],
+    atPeak: false,
   };
+
+  // Breeding: at peak condition (full HP + full enlightenment) the cat
+  // breeds. Each baby is a small cat that lives on the stage.
+  const MAX_BABIES = 6;
+  const BABY_PIXEL_SIZE = 3;
 
   // ── DOM refs ──
   const $ = (sel) => document.querySelector(sel);
@@ -171,9 +178,9 @@
   };
 
   // ── Pixel Cat Renderer ──
-  function drawCat(spriteName) {
+  function renderSprite(targetCtx, spriteName, pixelSize) {
     const sprite = sprites[spriteName] || sprites.normal;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    targetCtx.clearRect(0, 0, targetCtx.canvas.width, targetCtx.canvas.height);
 
     for (let y = 0; y < sprite.length; y++) {
       const row = sprite[y];
@@ -181,10 +188,14 @@
         const ch = row[x];
         const color = PALETTE[ch];
         if (!color) continue;
-        ctx.fillStyle = color;
-        ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+        targetCtx.fillStyle = color;
+        targetCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
       }
     }
+  }
+
+  function drawCat(spriteName) {
+    renderSprite(ctx, spriteName, PIXEL_SIZE);
     state.currentSprite = spriteName;
   }
 
@@ -205,6 +216,7 @@
     }
 
     updateCatMood();
+    checkBreeding();
   }
 
   function updateCatMood() {
@@ -530,6 +542,7 @@
     if (state.enlightenment >= 100 && !state.hasHalo) {
       grantHalo();
     }
+    checkBreeding();
   }
 
   function grantHalo() {
@@ -537,6 +550,45 @@
     const halo = document.createElement('div');
     halo.className = 'halo';
     catWrap.appendChild(halo);
+  }
+
+  // ── Breeding ──
+  // When the cat reaches peak condition (full HP + full enlightenment) it
+  // breeds, producing a baby cat. The peak must be re-reached for each new
+  // baby (happiness decays, so bring it back to full to breed again),
+  // up to MAX_BABIES total.
+  function checkBreeding() {
+    if (!state.alive) return;
+
+    const atPeak = state.happiness >= 100 && state.enlightenment >= 100;
+    if (atPeak && !state.atPeak) {
+      spawnBaby();
+    }
+    state.atPeak = atPeak;
+  }
+
+  function spawnBaby() {
+    if (state.babies.length >= MAX_BABIES) return;
+
+    const idx = state.babies.length;
+    // Spread babies across the ground, alternating sides of the parent.
+    const lefts = [22, 78, 34, 66, 12, 88];
+    const wrap = document.createElement('div');
+    wrap.className = 'baby-cat';
+    wrap.style.left = lefts[idx] + '%';
+    wrap.style.animationDelay = (idx % 3) * 0.2 + 's';
+
+    const babyCanvas = document.createElement('canvas');
+    babyCanvas.width = 14 * BABY_PIXEL_SIZE;
+    babyCanvas.height = 17 * BABY_PIXEL_SIZE;
+    renderSprite(babyCanvas.getContext('2d'), 'happy', BABY_PIXEL_SIZE);
+    wrap.appendChild(babyCanvas);
+
+    stage.appendChild(wrap);
+    state.babies.push(wrap);
+
+    spawnHearts();
+    showEmote('\u{1F476}'); // baby emoji
   }
 
   function triggerWeather(type) {

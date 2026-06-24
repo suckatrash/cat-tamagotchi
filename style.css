@@ -943,6 +943,34 @@ body {
   100% { box-shadow: 0 0 10px #ffee66, 0 0 20px rgba(255, 238, 102, 0.5); }
 }
 
+/* ── Baby Cats (breeding) ── */
+.baby-cat {
+  position: absolute;
+  bottom: 22px;
+  transform: translateX(-50%);
+  z-index: 8;
+  image-rendering: pixelated;
+  animation: baby-pop 0.5s steps(5) forwards;
+}
+
+.baby-cat canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  animation: baby-bob 2.2s steps(8) infinite;
+}
+
+@keyframes baby-pop {
+  0% { transform: translateX(-50%) scale(0); }
+  70% { transform: translateX(-50%) scale(1.2); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+
+@keyframes baby-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
 /* ── Responsive ── */
 @media (max-width: 500px) {
   #app { width: 100vw; }

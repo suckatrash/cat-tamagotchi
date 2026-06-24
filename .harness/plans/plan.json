@@ -3,7 +3,7 @@
   "title": "Cat Multiplication!",
   "type": "feature",
   "context": "When the cat is in peak condition, breeding happens",
-  "status": "planned",
+  "status": "complete",
   "tasks": [
     {
       "id": "1",
